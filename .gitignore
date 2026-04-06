@@ -1,0 +1,18 @@
+# Dependencies
+backend/node_modules/
+node_modules/
+
+# Database
+backend/pos.db
+
+# Environment variables
+.env
+.npm
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes

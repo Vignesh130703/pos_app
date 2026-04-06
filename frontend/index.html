@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartPOS — Department Store Management</title>
+  <meta name="description" content="Smart Department Store POS System - Billing, Inventory, Analytics">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- QR Code -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<!-- ═══ TOAST CONTAINER ═══════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ═══ NOTIFICATION PANEL ═══════════════════════════════════════ -->
+<div class="notif-panel" id="notif-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:700">🔔 Notifications</div>
+    <button class="btn btn-ghost btn-sm" id="btn-mark-all-read">Mark All Read</button>
+  </div>
+  <div id="notif-list"></div>
+</div>
+
+<!-- ═══ LOGIN PAGE ════════════════════════════════════════════════ -->
+<div id="login-page">
+  <div class="login-bg"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-circle">🏪</div>
+      <h1>SmartPOS</h1>
+      <p>Department Store Management System</p>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input id="login-username" class="form-control" type="text" placeholder="Enter username" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input id="login-password" class="form-control" type="password" placeholder="Enter password" autocomplete="current-password" required>
+      </div>
+      <button id="login-btn" class="btn btn-primary btn-lg" type="submit" style="width:100%">🔐 Login</button>
+    </form>
+    <div class="login-footer">
+      <strong>Admin:</strong> admin / admin123 &nbsp;|&nbsp; <strong>Cashier:</strong> cashier / cashier123
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ════════════════════════════════════════════════ -->
+<div id="app-shell" style="display:none;min-height:100vh;background:var(--bg-primary)">
+  <div id="app" style="display:flex;min-height:100vh">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏪</div>
+      <div>
+        <div class="logo-text">SmartPOS</div>
+        <div class="logo-sub">Store Management</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-label">Sales</div>
+        <div class="nav-item active" data-page="billing">
+          <span class="nav-icon">🧾</span> Billing
+          <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">F2</span>
+        </div>
+        <div class="nav-item" data-page="bills">
+          <span class="nav-icon">📋</span> Bill History
+        </div>
+        <div class="nav-item" data-page="returns">
+          <span class="nav-icon">🔁</span> Returns
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Inventory</div>
+        <div class="nav-item" data-page="products">
+          <span class="nav-icon">📦</span> Products
+        </div>
+        <div class="nav-item" data-page="inventory">
+          <span class="nav-icon">🏭</span> Inventory
+        </div>
+        <div class="nav-item" data-page="expiry">
+          <span class="nav-icon">⚠️</span> Expiry
+        </div>
+        <div class="nav-item" data-page="damaged">
+          <span class="nav-icon">💔</span> Damaged Stock
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Contacts</div>
+        <div class="nav-item" data-page="customers">
+          <span class="nav-icon">👥</span> Customers
+        </div>
+        <div class="nav-item" data-page="suppliers">
+          <span class="nav-icon">🏭</span> Suppliers
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Procurement</div>
+        <div class="nav-item admin-only" data-page="purchases">
+          <span class="nav-icon">🛒</span> Purchases
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Admin</div>
+        <div class="nav-item admin-only" data-page="analytics">
+          <span class="nav-icon">📊</span> Analytics
+        </div>
+        <div class="nav-item admin-only" data-page="users">
+          <span class="nav-icon">👑</span> Users
+        </div>
+        <div class="nav-item admin-only" data-page="audit">
+          <span class="nav-icon">🔐</span> Audit Logs
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card" id="user-card">
+        <div class="user-avatar" id="user-avatar">A</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Admin</div>
+          <div class="user-role" id="user-role">admin</div>
+        </div>
+        <button id="btn-logout" class="btn btn-ghost btn-sm" title="Logout" style="padding:4px 8px">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="page-title">Billing</div>
+      </div>
+      <div class="topbar-search" style="display:none">
+        <span style="color:var(--text-muted)">🔍</span>
+        <input type="text" placeholder="Global search...">
+      </div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <div class="topbar-time" id="topbar-time"></div>
+        <div class="icon-btn" id="btn-notif" title="Notifications (Alt+N)">
+          🔔 <span class="badge" style="display:none">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BILLING PAGE ═══════════════════════════════════════ -->
+    <div class="page active" id="page-billing">
+      <!-- ── BILLING SESSION TABS ── -->
+      <div id="billing-tabs" class="billing-tab-bar"></div>
+
+      <!-- ── TOP AREA: Cart (left) + Receipt preview (right) ── -->
+      <div class="billing-layout">
+
+        <!-- LEFT: Scan + Cart -->
+        <div class="billing-left">
+          <!-- Scan Bar -->
+          <div class="scan-bar">
+            <div class="scan-input-wrap" style="position:relative;flex:1">
+              <span class="scan-icon">📡</span>
+              <input type="text" id="scan-input" class="scan-input" placeholder="Scan barcode or search product... (F2 to focus)" autocomplete="off">
+              <div class="search-dropdown" id="scan-dropdown"></div>
+            </div>
+            <button class="btn btn-primary" onclick="billing.focusScan()">🎯 Focus</button>
+            <button class="btn btn-ghost" onclick="billing.clearCart()">🗑️ Clear</button>
+          </div>
+
+          <!-- Cart Table -->
+          <div class="card" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0">
+            <div style="padding:10px 16px;border-bottom:1px solid var(--border-light);font-size:12px;font-weight:700;color:var(--text-muted);display:flex;align-items:center;justify-content:space-between">
+              <span>🛒 CART ITEMS</span>
+              <span id="cart-item-count" style="font-size:11px;color:var(--accent-light)"></span>
+            </div>
+            <div class="cart-table-wrap" style="flex:1;overflow-y:auto">
+              <table class="cart-table">
+                <thead><tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th>Disc%</th>
+                  <th>GST%</th>
+                  <th>Total</th>
+                  <th></th>
+                </tr></thead>
+                <tbody id="cart-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Live Receipt Preview -->
+        <div class="billing-right receipt-panel">
+          <div class="receipt-panel-header">
+            <span>🧾 Bill Preview</span>
+            <span id="rp-bill-time" style="font-size:11px;color:var(--text-muted)"></span>
+          </div>
+          <div class="receipt-panel-body" id="live-receipt">
+            <!-- rendered by billing.renderLiveReceipt() -->
+            <div class="receipt-empty-state">
+              <div style="font-size:48px;margin-bottom:12px;opacity:.3">🧾</div>
+              <div style="font-size:14px;font-weight:600;opacity:.4">Add items to see bill preview</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BOTTOM BAR: Customer + Summary + Payment ── -->
+      <div class="billing-bottom-bar">
+
+        <!-- Customer lookup -->
+        <div class="bb-customer">
+          <span style="font-size:16px;flex-shrink:0">👤</span>
+          <input type="text" id="customer-phone-input" class="form-control" placeholder="Phone (Enter to lookup)...">
+          <button class="btn btn-ghost btn-sm" id="clear-customer" title="Clear customer" style="flex-shrink:0">✕</button>
+          <div id="customer-display" class="bb-customer-info"></div>
+        </div>
+
+        <!-- Summary numbers -->
+        <div class="bb-summary">
+          <div class="bb-row"><span class="bb-label">Subtotal</span><span id="summary-subtotal" class="bb-val">₹0.00</span></div>
+          <div class="bb-row"><span class="bb-label">GST</span><span id="summary-gst" class="bb-val">₹0.00</span></div>
+          <div class="bb-row">
+            <span class="bb-label">Disc ₹</span>
+            <input type="number" id="bill-discount" value="0" min="0" placeholder="0"
+              style="width:80px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:13px;text-align:right">
+          </div>
+          <div class="bb-row total"><span>TOTAL</span><span id="summary-total" class="bb-total-val">₹0.00</span></div>
+        </div>
+
+        <!-- Payment methods -->
+        <div class="bb-payment">
+          <div class="bb-pay-label">PAYMENT</div>
+          <div class="payment-methods" style="margin-bottom:0;gap:6px">
+            <div class="pay-method active" data-mode="cash"><span class="pay-icon">💵</span>Cash</div>
+            <div class="pay-method" data-mode="upi"><span class="pay-icon">📱</span>UPI</div>
+            <div class="pay-method" data-mode="card"><span class="pay-icon">💳</span>Card</div>
+            <div class="pay-method" data-mode="split"><span class="pay-icon">✂️</span>Split</div>
+          </div>
+        </div>
+
+        <!-- Charge + quick actions -->
+        <div class="bb-charge">
+          <button class="charge-btn" id="charge-btn">💳 Charge ₹0.00</button>
+          <div style="display:flex;gap:6px;margin-top:6px;justify-content:center">
+            <button class="btn btn-ghost btn-sm" onclick="billing.openAddProduct('')" style="font-size:11px;padding:4px 8px">➕ Product</button>
+            <button class="btn btn-ghost btn-sm" onclick="app.navigateTo('returns')" style="font-size:11px;padding:4px 8px">🔁 Returns</button>
+            <button class="btn btn-ghost btn-sm" onclick="app.navigateTo('bills')" style="font-size:11px;padding:4px 8px">📋 History</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PRODUCTS PAGE ════════════════════════════════════════ -->
+    <div class="page" id="page-products">
+      <div class="page-header">
+        <div><div class="page-title">📦 Products</div><div class="page-subtitle">Manage your product catalog</div></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" id="btn-add-product">➕ Add Product</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="product-search" class="form-control" placeholder="Search by name or barcode...">
+        </div>
+        <select id="product-cat-filter" class="form-control product-category-select" style="width:180px">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Barcode</th><th>Product Name</th><th>Category</th>
+              <th>Cost Price</th><th>Sell Price</th><th>GST</th><th>Stock</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="products-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ INVENTORY PAGE ══════════════════════════════════════ -->
+    <div class="page" id="page-inventory">
+      <div class="page-header">
+        <div><div class="page-title">🏭 Inventory</div><div class="page-subtitle">Real-time stock levels</div></div>
+        <button class="btn btn-ghost" id="btn-refresh-inv">🔄 Refresh</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="inv-search" class="form-control" placeholder="Search products...">
+        </div>
+        <select id="inv-filter" class="form-control" style="width:160px">
+          <option value="all">All Products</option>
+          <option value="low">Low Stock</option>
+          <option value="out">Out of Stock</option>
+        </select>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Barcode</th><th>Product</th><th>Cost</th><th>Price</th><th>Stock Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="inventory-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ EXPIRY PAGE ══════════════════════════════════════════ -->
+    <div class="page" id="page-expiry">
+      <div class="page-header">
+        <div><div class="page-title">⚠️ Expiry Management</div><div class="page-subtitle">Track batches nearing expiry</div></div>
+        <button class="btn btn-ghost" onclick="expiry.init()">🔄 Refresh</button>
+      </div>
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-icon red">☠️</div>
+          <div class="stat-info">
+            <div class="stat-value" id="stat-expired">0</div>
+            <div class="stat-label">Expired Batches</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon yellow">⚠️</div>
+          <div class="stat-info">
+            <div class="stat-value" id="stat-exp3">0</div>
+            <div class="stat-label">Expire in 3 Days</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">🗓️</div>
+          <div class="stat-info">
+            <div class="stat-value" id="stat-exp7">0</div>
+            <div class="stat-label">Expire in 7 Days</div>
+          </div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="showExpiryTab('expired', this)">☠️ Expired</div>
+        <div class="tab" onclick="showExpiryTab('3days', this)">⚠️ 3 Days</div>
+        <div class="tab" onclick="showExpiryTab('7days', this)">⏳ 7 Days</div>
+      </div>
+      <div class="card" id="expiry-expired" style="padding:0;overflow-x:auto"></div>
+      <div class="card" id="expiry-3days" style="padding:0;overflow-x:auto;display:none"></div>
+      <div class="card" id="expiry-7days" style="padding:0;overflow-x:auto;display:none"></div>
+    </div>
+
+    <!-- ═══ RETURNS PAGE ═════════════════════════════════════════ -->
+    <div class="page" id="page-returns">
+      <div class="page-header">
+        <div><div class="page-title">🔁 Returns Management</div><div class="page-subtitle">Process product returns within 30 days</div></div>
+      </div>
+      <div class="grid-2" style="gap:24px">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title">Search Bill</div>
+            <div class="input-group">
+              <input type="text" id="returns-bill-search" class="form-control" placeholder="Enter bill number or bill ID...">
+              <button class="btn btn-primary" id="btn-search-bill">🔍 Search</button>
+            </div>
+          </div>
+          <div id="return-bill-detail"></div>
+        </div>
+        <div>
+          <div class="card" style="padding:0">
+            <div style="padding:16px;border-bottom:1px solid var(--border-light);font-size:13px;font-weight:700;color:var(--text-muted)">RECENT RETURNS</div>
+            <div class="table-wrapper">
+              <table>
+                <thead><tr>
+                  <th>Return No</th><th>Bill</th><th>Customer</th><th>Refund</th><th>Mode</th><th>By</th><th>Date</th>
+                </tr></thead>
+                <tbody id="returns-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CUSTOMERS PAGE ══════════════════════════════════════ -->
+    <div class="page" id="page-customers">
+      <div class="page-header">
+        <div><div class="page-title">👥 Customers</div><div class="page-subtitle">Customer profiles and purchase history</div></div>
+        <button class="btn btn-primary" id="btn-add-customer">➕ Add Customer</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="customer-search-inp" class="form-control" placeholder="Search by name or phone...">
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Total Spent</th><th>Loyalty Pts</th><th>Last Visit</th><th>Actions</th></tr></thead>
+            <tbody id="customers-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SUPPLIERS PAGE ══════════════════════════════════════ -->
+    <div class="page" id="page-suppliers">
+      <div class="page-header">
+        <div><div class="page-title">🏭 Suppliers</div><div class="page-subtitle">Manage supplier contacts</div></div>
+        <button class="btn btn-primary" id="btn-add-supplier">➕ Add Supplier</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Address</th><th>Actions</th></tr></thead>
+            <tbody id="suppliers-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PURCHASES PAGE ══════════════════════════════════════ -->
+    <div class="page" id="page-purchases">
+      <div class="page-header">
+        <div><div class="page-title">🛒 Purchases / Stock-In</div><div class="page-subtitle">Record stock received from suppliers</div></div>
+        <button class="btn btn-primary" id="btn-new-purchase">➕ New Purchase</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>#</th><th>Supplier</th><th>Date</th><th>Total</th><th>Created By</th><th>Actions</th></tr></thead>
+            <tbody id="purchases-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BILLS HISTORY PAGE ══════════════════════════════════ -->
+    <div class="page" id="page-bills">
+      <div class="page-header">
+        <div><div class="page-title">📋 Bill History</div><div class="page-subtitle">View and reprint bills</div></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="date" id="bills-date-filter" class="form-control" style="width:180px">
+          <button class="btn btn-ghost" id="btn-refresh-bills">🔄 Refresh</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Bill No</th><th>Customer</th><th>Cashier</th><th>Subtotal</th><th>GST</th><th>Total</th><th>Payment</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="bills-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DAMAGED STOCK PAGE ══════════════════════════════════ -->
+    <div class="page" id="page-damaged">
+      <div class="page-header">
+        <div><div class="page-title">💔 Damaged Stock</div><div class="page-subtitle">Track and analyze stock losses</div></div>
+      </div>
+      <div class="stats-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-icon red">💔</div>
+          <div class="stat-info">
+            <div class="stat-value" id="damage-total-count">0</div>
+            <div class="stat-label">Damage Entries</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">💰</div>
+          <div class="stat-info">
+            <div class="stat-value" id="damage-total-loss">₹0</div>
+            <div class="stat-label">Total Estimated Loss</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2" style="gap:24px">
+        <div class="card">
+          <div class="card-title">📝 Record Damage</div>
+          <form id="damage-form">
+            <div class="form-group">
+              <label class="form-label">Product</label>
+              <select id="damage-product" class="form-control"><option value="">Select Product</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              <input type="number" id="damage-qty" class="form-control" min="1" value="1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reason</label>
+              <input type="text" id="damage-reason" class="form-control" placeholder="e.g. Broken, Expired, Water damage...">
+            </div>
+            <button type="submit" class="btn btn-danger">📝 Record Damage</button>
+          </form>
+        </div>
+        <div class="card" style="padding:0">
+          <div style="padding:16px;font-size:13px;font-weight:700;color:var(--text-muted)">DAMAGE LOG</div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Est. Loss</th><th>Reason</th><th>By</th><th>Date</th></tr></thead>
+              <tbody id="damaged-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ANALYTICS PAGE ══════════════════════════════════════ -->
+    <div class="page" id="page-analytics">
+      <div class="page-header">
+        <div><div class="page-title">📊 Analytics Dashboard</div><div class="page-subtitle">Business performance overview</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm analytics-period active" data-period="today">Today</button>
+          <button class="btn btn-ghost btn-sm analytics-period" data-period="week">Week</button>
+          <button class="btn btn-ghost btn-sm analytics-period" data-period="month">Month</button>
+          <button class="btn btn-ghost btn-sm analytics-period" data-period="year">Year</button>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="stats-grid" style="margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-icon purple">💰</div>
+          <div class="stat-info"><div class="stat-value" id="an-revenue">₹0</div><div class="stat-label">Revenue</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">📈</div>
+          <div class="stat-info"><div class="stat-value" id="an-profit">₹0</div><div class="stat-label">Gross Profit</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">🧾</div>
+          <div class="stat-info"><div class="stat-value" id="an-bills">0</div><div class="stat-label">Bills</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon yellow">👥</div>
+          <div class="stat-info"><div class="stat-value" id="an-customers">0</div><div class="stat-label">Customers</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">📦</div>
+          <div class="stat-info"><div class="stat-value" id="an-products">0</div><div class="stat-label">Products</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">💔</div>
+          <div class="stat-info"><div class="stat-value" id="an-damage">₹0</div><div class="stat-label">Damage Loss</div></div>
+        </div>
+      </div>
+      <!-- Charts Row 1 -->
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-title">📈 Sales Trend (30 days)</div>
+          <div class="chart-container"><canvas id="sales-chart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">💳 Payment Methods</div>
+          <div class="chart-container"><canvas id="payment-chart"></canvas></div>
+        </div>
+      </div>
+      <!-- Charts Row 2 -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🏆 Top Selling Products</div>
+          <div id="top-products-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚠️ Low Stock Alert</div>
+          <div id="low-stock-list"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">📂 Sales by Category</div>
+        <div class="chart-container"><canvas id="category-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ═══ USERS PAGE ═══════════════════════════════════════════ -->
+    <div class="page" id="page-users">
+      <div class="page-header">
+        <div><div class="page-title">👑 User Management</div><div class="page-subtitle">Manage staff accounts and roles</div></div>
+      </div>
+      <div class="grid-2" style="gap:24px">
+        <div class="card">
+          <div class="card-title">➕ Add New User</div>
+          <form id="user-mgmt-form">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="new-user-name" class="form-control" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <input type="text" id="new-user-username" class="form-control" placeholder="johndoe" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="password" id="new-user-password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select id="new-user-role" class="form-control">
+                <option value="cashier">🧾 Cashier</option>
+                <option value="admin">👑 Admin</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">➕ Create User</button>
+          </form>
+        </div>
+        <div>
+          <div class="card-title" style="margin-bottom:12px">👥 Current Users</div>
+          <div id="users-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ AUDIT LOGS PAGE ═════════════════════════════════════ -->
+    <div class="page" id="page-audit">
+      <div class="page-header">
+        <div><div class="page-title">🔐 Audit Logs</div><div class="page-subtitle">Track all system changes</div></div>
+        <button class="btn btn-ghost" onclick="auditLogs.init()">🔄 Refresh</button>
+      </div>
+      <div class="card">
+        <div id="audit-list"></div>
+      </div>
+    </div>
+
+  </div><!-- /.main-content -->
+  </div><!-- /#app -->
+</div><!-- /#app-shell -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════════════════ -->
+
+<!-- RECEIPT MODAL -->
+<div class="modal-overlay" id="modal-receipt">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title">🧾 Receipt</div>
+      <div class="modal-close" onclick="closeModal('modal-receipt')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div id="receipt-content"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-receipt')">Close</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPI QR MODAL -->
+<div class="modal-overlay" id="modal-qr">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-header">
+      <div class="modal-title">📱 UPI Payment</div>
+      <div class="modal-close" onclick="closeModal('modal-qr')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="qr-display">
+        <div class="qr-amount" id="qr-amount-display">₹0.00</div>
+        <div class="qr-canvas" id="qr-canvas" style="background:#fff;padding:12px;border-radius:12px;display:inline-block"></div>
+        <div class="qr-instructions">Ask customer to scan this QR code<br>with any UPI app to pay</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-qr')">Cancel</button>
+      <button class="btn btn-success" onclick="closeModal('modal-qr');billing.processPayment()">✅ Mark as Paid</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK ADD PRODUCT MODAL (from billing) -->
+<div class="modal-overlay" id="modal-quick-add">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚡ Quick Add Product</div>
+      <div class="modal-close" onclick="closeModal('modal-quick-add')">✕</div>
+    </div>
+    <div class="modal-body">
+      <form id="quick-add-form" onsubmit="quickAddProduct(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Barcode</label>
+            <input type="text" id="qp-barcode" class="form-control" placeholder="Barcode (optional)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit</label>
+            <select id="qp-unit" class="form-control"><option value="pcs">pcs</option><option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option><option value="box">box</option></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input type="text" id="qp-name" class="form-control" placeholder="Product Name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="qp-category" class="form-control product-category-select">
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">GST %</label>
+            <input type="number" id="qp-gst" class="form-control" value="0" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Cost Price</label>
+            <div class="input-group"><span class="input-prefix">₹</span><input type="number" id="qp-cost" class="form-control" min="0" step="0.01" value="0"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sell Price *</label>
+            <div class="input-group"><span class="input-prefix">₹</span><input type="number" id="qp-price" class="form-control" min="0" step="0.01" required></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Min Stock</label>
+            <input type="number" id="qp-minstock" class="form-control" value="5" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Initial Stock Qty</label>
+          <input type="number" id="qp-qty" class="form-control" value="0" min="0">
+        </div>
+        <div class="modal-footer" style="padding:0;border:none;margin-top:16px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-quick-add')">Cancel</button>
+          <button type="submit" class="btn btn-primary">⚡ Add & Continue Billing</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL (full add/edit) -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="product-modal-title">➕ Add Product</div>
+      <div class="modal-close" onclick="closeModal('modal-product')">✕</div>
+    </div>
+    <div class="modal-body">
+      <form id="product-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Barcode</label>
+            <input type="text" id="product-form-barcode" class="form-control" placeholder="Scan or enter barcode">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit</label>
+            <select id="product-form-unit" class="form-control"><option value="pcs">pcs</option><option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="ml">ml</option><option value="box">box</option><option value="pack">pack</option></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input type="text" id="product-form-name" class="form-control" placeholder="Product name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="product-form-category" class="form-control product-category-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">GST %</label>
+            <input type="number" id="product-form-gst" class="form-control" value="0" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Cost Price</label>
+            <div class="input-group"><span class="input-prefix">₹</span><input type="number" id="product-form-cost" class="form-control" min="0" step="0.01" value="0"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Selling Price *</label>
+            <div class="input-group"><span class="input-prefix">₹</span><input type="number" id="product-form-price" class="form-control" min="0" step="0.01" required></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Min Stock Alert</label>
+            <input type="number" id="product-form-minstock" class="form-control" value="5" min="0">
+          </div>
+        </div>
+        <div class="modal-footer" style="padding:0;border:none;margin-top:8px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-product')">Cancel</button>
+          <button type="submit" class="btn btn-primary">💾 Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- BATCHES MODAL -->
+<div class="modal-overlay" id="modal-batches">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">📦 Batches — <span id="batch-product-name"></span></div>
+      <div class="modal-close" onclick="closeModal('modal-batches')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="batch-product-id">
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Batch No</th><th>Quantity</th><th>Purchase Price</th><th>Purchase Date</th><th>Expiry Date</th></tr></thead>
+          <tbody id="batches-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STOCK ADJUST MODAL -->
+<div class="modal-overlay" id="modal-adjust">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Stock Adjustment</div>
+      <div class="modal-close" onclick="closeModal('modal-adjust')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div id="adj-product-name" style="font-size:16px;font-weight:700;margin-bottom:16px"></div>
+      <form onsubmit="inventory.saveAdjust(event)">
+        <input type="hidden" id="adj-product-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Current Stock</label>
+            <div class="form-control" style="opacity:.6" id="adj-current">0</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Quantity *</label>
+            <input type="number" id="adj-new-qty" class="form-control" min="0" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason</label>
+          <input type="text" id="adj-reason" class="form-control" placeholder="Reason for adjustment...">
+        </div>
+        <div class="modal-footer" style="padding:0;border:none;margin-top:8px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-adjust')">Cancel</button>
+          <button type="submit" class="btn btn-warning">⚙️ Adjust Stock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- NEW BATCH MODAL -->
+<div class="modal-overlay" id="modal-new-batch">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📦 Add Batch — <span id="nb-product-name"></span></div>
+      <div class="modal-close" onclick="closeModal('modal-new-batch')">✕</div>
+    </div>
+    <div class="modal-body">
+      <form id="nb-form" onsubmit="inventory.saveNewBatch(event)">
+        <input type="hidden" id="nb-product-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Quantity *</label>
+            <input type="number" id="nb-qty" class="form-control" min="1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Purchase Price</label>
+            <div class="input-group"><span class="input-prefix">₹</span><input type="number" id="nb-purchase-price" class="form-control" min="0" step="0.01"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Expiry Date</label>
+            <input type="date" id="nb-expiry" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Batch No</label>
+            <input type="text" id="nb-batchno" class="form-control" placeholder="e.g. LOT-2025-01">
+          </div>
+        </div>
+        <div class="modal-footer" style="padding:0;border:none;margin-top:8px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-new-batch')">Cancel</button>
+          <button type="submit" class="btn btn-primary">📦 Add Batch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER MODAL -->
+<div class="modal-overlay" id="modal-customer">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="customer-modal-title">➕ Add Customer</div>
+      <div class="modal-close" onclick="closeModal('modal-customer')">✕</div>
+    </div>
+    <div class="modal-body">
+      <form id="customer-form">
+        <input type="hidden" id="cust-edit-id">
+        <div class="form-group">
+          <label class="form-label">Phone *</label>
+          <input type="tel" id="cust-form-phone" class="form-control" placeholder="10-digit phone" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" id="cust-form-name" class="form-control" placeholder="Customer Name" value="Walk-in Customer">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="cust-form-email" class="form-control" placeholder="email@example.com">
+        </div>
+        <div class="modal-footer" style="padding:0;border:none;margin-top:8px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-customer')">Cancel</button>
+          <button type="submit" class="btn btn-primary">💾 Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMER DETAIL MODAL -->
+<div class="modal-overlay" id="modal-customer-detail">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">👤 Customer Profile</div>
+      <div class="modal-close" onclick="closeModal('modal-customer-detail')">✕</div>
+    </div>
+    <div class="modal-body" id="cust-detail-body"></div>
+  </div>
+</div>
+
+<!-- SUPPLIER MODAL -->
+<div class="modal-overlay" id="modal-supplier">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="supplier-modal-title">➕ Add Supplier</div>
+      <div class="modal-close" onclick="closeModal('modal-supplier')">✕</div>
+    </div>
+    <div class="modal-body">
+      <form id="supplier-form">
+        <div class="form-group">
+          <label class="form-label">Supplier Name *</label>
+          <input type="text" id="sup-name" class="form-control" placeholder="Supplier Company" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="tel" id="sup-phone" class="form-control" placeholder="Phone number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="sup-email" class="form-control" placeholder="email@example.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" id="sup-address" class="form-control" placeholder="Full address">
+        </div>
+        <div class="modal-footer" style="padding:0;border:none;margin-top:8px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-supplier')">Cancel</button>
+          <button type="submit" id="submit-supplier" class="btn btn-primary">💾 Save Supplier</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- PURCHASE MODAL -->
+<div class="modal-overlay" id="modal-purchase">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <div class="modal-title">🛒 New Purchase Order</div>
+      <div class="modal-close" onclick="closeModal('modal-purchase')">✕</div>
+    </div>
+    <div class="modal-body">
+      <form id="purchase-form">
+        <div class="form-row" style="margin-bottom:16px">
+          <div class="form-group">
+            <label class="form-label">Supplier</label>
+            <select id="purchase-supplier" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <input type="text" id="purchase-notes" class="form-control" placeholder="Optional notes">
+          </div>
+        </div>
+        <!-- Add item row -->
+        <div class="card" style="background:var(--bg-hover);margin-bottom:16px">
+          <div class="card-title">Add Item</div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Product</label>
+              <select id="pi-product" class="form-control"></select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Quantity</label>
+              <input type="number" id="pi-qty" class="form-control" value="1" min="1">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Cost ₹</label>
+              <input type="number" id="pi-cost" class="form-control" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Expiry</label>
+              <input type="date" id="pi-expiry" class="form-control">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Batch No</label>
+              <input type="text" id="pi-batch" class="form-control" placeholder="LOT-001">
+            </div>
+            <button type="button" class="btn btn-primary" id="btn-add-purchase-item">➕</button>
+          </div>
+        </div>
+        <div id="purchase-items-list"></div>
+        <div class="modal-footer" style="padding:0;border:none;margin-top:16px">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-purchase')">Cancel</button>
+          <button type="submit" class="btn btn-success">✅ Create Purchase Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ SCRIPTS ═════════════════════════════════════════════════════ -->
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/billing.js"></script>
+<script src="js/products.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/returns.js"></script>
+<script src="js/suppliers.js"></script>
+<script src="js/modules.js"></script>
+
+<!-- Helper for expiry tab switching -->
+<script>
+function showExpiryTab(tab, btn) {
+  ['expired','3days','7days'].forEach(t => {
+    document.getElementById('expiry-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+
+</body>
+</html>
